@@ -71,6 +71,35 @@
             box-shadow: 0 1px 0 #a02c42;
         }
 
+        .btn-start {
+            background: #2a9d8f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: clamp(12px, 1.8vw, 16px);
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 3px 0 #1d6b61;
+            height: 80%;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-start:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #1d6b61;
+        }
+
+        .btn-start:disabled {
+            background: #555;
+            box-shadow: 0 3px 0 #333;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .round-display {
             background: #0a1a2f;
             color: #f0c040;
@@ -449,7 +478,7 @@
             .top-section {
                 gap: 6px;
             }
-            .btn-reset {
+            .btn-reset, .btn-start {
                 padding: 5px 10px;
                 font-size: 11px;
             }
@@ -505,6 +534,7 @@
     <div class="top-bar">
         <div class="top-section">
             <button class="btn-reset" id="resetBtn">🔄 Réinitialiser</button>
+            <button class="btn-start" id="startBtn">▶️ Démarrer</button>
             <div class="round-display" id="roundDisplay">
                 <span class="label">ROUND</span>
                 <span id="roundText">1/3</span>
@@ -519,7 +549,7 @@
         </div>
 
         <div class="timer-container">
-            <div class="state-label" id="stateLabel">ROUND</div>
+            <div class="state-label" id="stateLabel">PRÊT</div>
             <div class="timer-box" id="timerBox">1:30</div>
         </div>
     </div>
@@ -584,53 +614,68 @@
             }
         }
 
-        // Cloche forte
+        // Son de cloche réaliste et fort
         function playBell() {
             initAudio();
             if (!audioCtx) return;
             
             const now = audioCtx.currentTime;
             
-            // Fondamental
+            // === Cloche principale (fondamentale) ===
             const osc1 = audioCtx.createOscillator();
             const gain1 = audioCtx.createGain();
             osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(880, now);
-            osc1.frequency.exponentialRampToValueAtTime(440, now + 1.5);
-            gain1.gain.setValueAtTime(0.8, now);
-            gain1.gain.exponentialRampToValueAtTime(0.001, now + 2);
+            osc1.frequency.setValueAtTime(1046.5, now); // Do 6
+            osc1.frequency.exponentialRampToValueAtTime(523.25, now + 3);
+            gain1.gain.setValueAtTime(1.0, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 4);
             
-            // Harmonique
+            // === Harmonique 1 (quinte) ===
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
             osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(1320, now);
-            osc2.frequency.exponentialRampToValueAtTime(660, now + 1.2);
-            gain2.gain.setValueAtTime(0.5, now);
-            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+            osc2.frequency.setValueAtTime(1568, now); // Sol 6
+            osc2.frequency.exponentialRampToValueAtTime(784, now + 2.5);
+            gain2.gain.setValueAtTime(0.7, now);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 3);
             
-            // Bruit métallique
+            // === Harmonique 2 (octave) ===
             const osc3 = audioCtx.createOscillator();
             const gain3 = audioCtx.createGain();
-            osc3.type = 'square';
-            osc3.frequency.setValueAtTime(1760, now);
-            osc3.frequency.exponentialRampToValueAtTime(880, now + 0.8);
-            gain3.gain.setValueAtTime(0.3, now);
-            gain3.gain.exponentialRampToValueAtTime(0.001, now + 1);
+            osc3.type = 'sine';
+            osc3.frequency.setValueAtTime(2093, now); // Do 7
+            osc3.frequency.exponentialRampToValueAtTime(1046.5, now + 2);
+            gain3.gain.setValueAtTime(0.5, now);
+            gain3.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
             
-            osc1.connect(gain1);
-            gain1.connect(audioCtx.destination);
-            osc2.connect(gain2);
-            gain2.connect(audioCtx.destination);
-            osc3.connect(gain3);
-            gain3.connect(audioCtx.destination);
+            // === Bruit métallique (attaque) ===
+            const osc4 = audioCtx.createOscillator();
+            const gain4 = audioCtx.createGain();
+            osc4.type = 'square';
+            osc4.frequency.setValueAtTime(2637, now); // Mi 7
+            osc4.frequency.exponentialRampToValueAtTime(1318, now + 0.5);
+            gain4.gain.setValueAtTime(0.35, now);
+            gain4.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
             
-            osc1.start(now);
-            osc2.start(now);
-            osc3.start(now);
-            osc1.stop(now + 2);
-            osc2.stop(now + 2);
-            osc3.stop(now + 1.5);
+            // === Résonance basse (corps de la cloche) ===
+            const osc5 = audioCtx.createOscillator();
+            const gain5 = audioCtx.createGain();
+            osc5.type = 'triangle';
+            osc5.frequency.setValueAtTime(261.6, now); // Do 4
+            osc5.frequency.exponentialRampToValueAtTime(130.8, now + 3);
+            gain5.gain.setValueAtTime(0.4, now);
+            gain5.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+            
+            // Connexions
+            osc1.connect(gain1); gain1.connect(audioCtx.destination);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc3.connect(gain3); gain3.connect(audioCtx.destination);
+            osc4.connect(gain4); gain4.connect(audioCtx.destination);
+            osc5.connect(gain5); gain5.connect(audioCtx.destination);
+            
+            // Démarrage
+            osc1.start(now); osc2.start(now); osc3.start(now); osc4.start(now); osc5.start(now);
+            osc1.stop(now + 4); osc2.stop(now + 4); osc3.stop(now + 3); osc4.stop(now + 1); osc5.stop(now + 4);
         }
 
         // ===== ÉTAT DU JEU =====
@@ -659,7 +704,6 @@
             // Combat
             matchFinished: false,
             winner: null,            // 'blue' | 'red' | null
-            roundJustEnded: false,
         };
 
         // ===== RÉFÉRENCES DOM =====
@@ -677,6 +721,7 @@
         const roundDisplay = document.getElementById('roundDisplay');
         const scorePills = document.getElementById('scorePills');
         const resetBtn = document.getElementById('resetBtn');
+        const startBtn = document.getElementById('startBtn');
         const modalOverlay = document.getElementById('modalOverlay');
         const modalCancel = document.getElementById('modalCancel');
         const modalValidate = document.getElementById('modalValidate');
@@ -725,6 +770,9 @@
             // Vainqueur
             renderWinner();
             
+            // Bouton démarrer
+            updateStartButton();
+            
             // Désactiver les écrans si match fini
             if (state.matchFinished) {
                 blueScreen.classList.add('disabled');
@@ -732,6 +780,31 @@
             } else {
                 blueScreen.classList.remove('disabled');
                 redScreen.classList.remove('disabled');
+            }
+        }
+
+        function updateStartButton() {
+            if (state.matchFinished) {
+                startBtn.disabled = true;
+                startBtn.textContent = '⏹ Terminé';
+                return;
+            }
+            
+            if (state.isRunning) {
+                startBtn.disabled = true;
+                startBtn.textContent = '⏱ En cours';
+            } else if (state.phase === 'round' && state.timeLeft === state.roundDuration) {
+                startBtn.disabled = false;
+                startBtn.textContent = '▶️ Démarrer';
+            } else if (state.phase === 'break' && state.timeLeft === state.breakDuration) {
+                startBtn.disabled = false;
+                startBtn.textContent = '▶️ Repos';
+            } else if (!state.isRunning && state.timeLeft > 0) {
+                startBtn.disabled = false;
+                startBtn.textContent = '▶️ Reprendre';
+            } else {
+                startBtn.disabled = true;
+                startBtn.textContent = '▶️ Démarrer';
             }
         }
 
@@ -767,12 +840,6 @@
             if (state.matchFinished) {
                 timerBox.textContent = 'FIN';
                 timerBox.classList.add('finished');
-                return;
-            }
-            
-            if (!state.isRunning && state.timeLeft === (state.phase === 'round' ? state.roundDuration : state.breakDuration)) {
-                // Pas encore démarré
-                timerBox.textContent = formatTime(state.timeLeft);
                 return;
             }
             
@@ -861,7 +928,8 @@
         // ===== ACTIONS =====
         function addPoint(side) {
             if (state.matchFinished) return;
-            if (state.phase === 'break') return; // Pas de points pendant le repos
+            if (state.phase === 'break') return;
+            if (!state.isRunning) return; // Pas de points si le chrono n'est pas lancé
             
             if (side === 'blue') {
                 state.bluePoints++;
@@ -874,16 +942,61 @@
         function toggleFault(side, index) {
             if (state.matchFinished) return;
             if (state.phase === 'break') return;
+            if (!state.isRunning) return;
             
             const faults = getActiveFaults(side);
             faults[index] = !faults[index];
             
             // Vérifier si 3 fautes
             if (countActiveFaults(side) >= 3) {
-                endMatch(side === 'blue' ? 'red' : 'blue', '3 fautes');
+                // L'adversaire gagne le round
+                const opponent = side === 'blue' ? 'red' : 'blue';
+                endRoundByFaults(opponent);
                 return;
             }
             
+            render();
+        }
+
+        // Fin de round par 3 fautes (pas fin de match)
+        function endRoundByFaults(winnerSide) {
+            state.isRunning = false;
+            stopTimer();
+            playBell();
+            
+            // Enregistrer le vainqueur du round
+            state.roundWinners[state.currentRound - 1] = winnerSide;
+            
+            // Vérifier si le match est fini (tous les rounds joués)
+            if (state.currentRound >= state.totalRounds) {
+                // Match terminé - compter les victoires
+                const blueWins = state.roundWinners.filter(w => w === 'blue').length;
+                const redWins = state.roundWinners.filter(w => w === 'red').length;
+                
+                if (blueWins > redWins) {
+                    endMatch('blue', 'Victoire aux rounds');
+                } else if (redWins > blueWins) {
+                    endMatch('red', 'Victoire aux rounds');
+                } else {
+                    // Égalité parfaite - compter les points totaux
+                    if (state.bluePoints > state.redPoints) {
+                        endMatch('blue', 'Victoire aux points');
+                    } else if (state.redPoints > state.bluePoints) {
+                        endMatch('red', 'Victoire aux points');
+                    } else {
+                        state.matchFinished = true;
+                        state.winner = null;
+                        state.phase = 'finished';
+                        render();
+                    }
+                }
+                return;
+            }
+            
+            // Passer au round suivant après le repos
+            state.phase = 'break';
+            state.timeLeft = state.breakDuration;
+            state.isRunning = false; // L'utilisateur devra appuyer sur Reprendre
             render();
         }
 
@@ -948,8 +1061,7 @@
             // Passer au round suivant après le repos
             state.phase = 'break';
             state.timeLeft = state.breakDuration;
-            state.isRunning = true;
-            startTimer();
+            state.isRunning = false; // L'utilisateur devra appuyer sur Reprendre
             render();
         }
 
@@ -988,10 +1100,10 @@
                 
                 if (state.phase === 'round') {
                     if (state.timeLeft === Math.floor(total / 3)) {
-                        playBell(); // Alerte 1/3
+                        // Alerte 1/3 - silencieux visuel uniquement
                     }
                     if (state.timeLeft === 10) {
-                        playBell(); // Alerte 10 secondes
+                        // Alerte 10 secondes - silencieux visuel uniquement
                     }
                     if (state.timeLeft <= 0) {
                         state.timeLeft = 0;
@@ -1030,6 +1142,9 @@
             state.blueFaults = [false, false, false];
             state.redFaults = [false, false, false];
             state.roundWinners = [];
+            for (let i = 0; i < state.totalRounds; i++) {
+                state.roundWinners.push(null);
+            }
             state.timeLeft = state.roundDuration;
             state.isRunning = false;
             state.phase = 'round';
@@ -1048,7 +1163,6 @@
         // ===== ÉVÉNEMENTS =====
         // Points
         blueScreen.addEventListener('click', (e) => {
-            // Ne pas déclencher si on clique sur un bouton de faute
             if (e.target.closest('.fault-btn')) return;
             addPoint('blue');
         });
@@ -1073,6 +1187,29 @@
                 const index = parseInt(btn.dataset.fault);
                 toggleFault('red', index);
             });
+        });
+
+        // Bouton Démarrer / Reprendre
+        startBtn.addEventListener('click', () => {
+            if (state.matchFinished) return;
+            
+            if (state.isRunning) return; // Déjà en cours
+            
+            // Si c'est la fin d'un round/break et qu'on doit passer au suivant
+            if (state.timeLeft <= 0) {
+                if (state.phase === 'break') {
+                    startNextRound();
+                    return;
+                }
+            }
+            
+            // Démarrer / reprendre le chrono
+            state.isRunning = true;
+            if (state.phase === 'round' && state.timeLeft === state.roundDuration) {
+                playBell(); // Cloche au tout début du combat
+            }
+            startTimer();
+            render();
         });
 
         // Reset
@@ -1117,26 +1254,8 @@
             render();
         });
 
-        // Démarrer le chrono au premier clic sur un écran
-        blueScreen.addEventListener('click', () => {
-            if (!state.isRunning && !state.matchFinished && state.phase === 'round' && state.timeLeft === state.roundDuration) {
-                state.isRunning = true;
-                playBell();
-                startTimer();
-            }
-        }, { once: false });
-
-        redScreen.addEventListener('click', () => {
-            if (!state.isRunning && !state.matchFinished && state.phase === 'round' && state.timeLeft === state.roundDuration) {
-                state.isRunning = true;
-                playBell();
-                startTimer();
-            }
-        }, { once: false });
-
         // ===== INITIALISATION =====
         function init() {
-            // Remplir les roundWinners avec des null
             for (let i = 0; i < state.totalRounds; i++) {
                 state.roundWinners.push(null);
             }
