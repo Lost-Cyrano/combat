@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Compteur de Combat - Bleu vs Rouge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+        }
+
+        /* ===== BARRE DU HAUT ===== */
+        .top-bar {
+            height: 12vh;
+            min-height: 70px;
+            max-height: 110px;
+            background: linear-gradient(180deg, #16213e 0%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            gap: 10px;
+            border-bottom: 3px solid #e94560;
+            flex-shrink: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            flex-wrap: nowrap;
+        }
+
+        .top-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+        }
+
+        .btn-reset {
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: clamp(12px, 1.8vw, 16px);
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 3px 0 #a02c42;
+            height: 80%;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-reset:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #a02c42;
+        }
+
+        .round-display {
+            background: #0a1a2f;
+            color: #f0c040;
+            border: 2px solid #f0c040;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: clamp(13px, 2vw, 18px);
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+            height: 80%;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .round-display:hover {
+            background: #1a2a3f;
+        }
+
+        .round-display .label {
+            font-size: clamp(9px, 1.2vw, 12px);
+            color: #8ab4f8;
+            font-weight: normal;
+        }
+
+        .score-pills {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            height: 80%;
+            padding: 0 8px;
+        }
+
+        .pill {
+            width: clamp(18px, 2.5vw, 28px);
+            height: clamp(18px, 2.5vw, 28px);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .pill.red {
+            background: #e63946;
+            border-color: #ff6b7a;
+            box-shadow: 0 0 10px rgba(230,57,70,0.8);
+        }
+
+        .pill.blue {
+            background: #3a86ff;
+            border-color: #7aacff;
+            box-shadow: 0 0 10px rgba(58,134,255,0.8);
+        }
+
+        .pill.gray {
+            background: #4a4a5a;
+            border-color: #6a6a7a;
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 90%;
+        }
+
+        .timer-box {
+            background: #000;
+            color: #fff;
+            padding: 4px 16px;
+            border-radius: 10px;
+            font-size: clamp(22px, 4.5vw, 44px);
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            min-width: clamp(110px, 18vw, 180px);
+            text-align: center;
+            border: 3px solid #333;
+            transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+            line-height: 1.2;
+        }
+
+        .timer-box.warning {
+            background: #f0c040 !important;
+            color: #1a1a2e !important;
+            border-color: #fff3c4 !important;
+            box-shadow: 0 0 25px rgba(240,192,64,0.9);
+        }
+
+        .timer-box.danger {
+            background: #e63946 !important;
+            color: #fff !important;
+            border-color: #ff8a8a !important;
+            box-shadow: 0 0 30px rgba(230,57,70,1);
+            animation: pulse-danger 0.8s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+
+        .timer-box.finished {
+            background: #2a2a3a !important;
+            color: #f0c040 !important;
+            border-color: #f0c040 !important;
+            box-shadow: 0 0 35px rgba(240,192,64,0.9);
+            animation: pulse-finished 1s infinite;
+        }
+
+        @keyframes pulse-finished {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .state-label {
+            font-size: clamp(9px, 1.3vw, 14px);
+            color: #8ab4f8;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            min-width: clamp(60px, 8vw, 90px);
+            text-align: center;
+        }
+
+        /* ===== PARTIE BASSE ===== */
+        .bottom-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: filter 0.3s, opacity 0.3s;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .screen.blue {
+            background: radial-gradient(circle at 30% 40%, #1e4d8c, #0a1e3d);
+        }
+
+        .screen.red {
+            background: radial-gradient(circle at 70% 40%, #9c1a2a, #3d0a12);
+        }
+
+        .screen.disabled {
+            filter: grayscale(0.8) brightness(0.5);
+            pointer-events: none;
+        }
+
+        .screen.winner {
+            filter: brightness(1.3);
+            animation: winner-glow 1.5s infinite;
+        }
+
+        @keyframes winner-glow {
+            0%, 100% { box-shadow: inset 0 0 40px rgba(255,215,0,0.4); }
+            50% { box-shadow: inset 0 0 80px rgba(255,215,0,0.8); }
+        }
+
+        .points-display {
+            font-size: clamp(60px, 14vw, 160px);
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 30px rgba(255,255,255,0.5);
+            line-height: 1;
+            transition: transform 0.15s;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .screen:active .points-display {
+            transform: scale(1.1);
+        }
+
+        .winner-badge {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: gold;
+            color: #1a1a2e;
+            font-size: clamp(18px, 4vw, 40px);
+            font-weight: 900;
+            padding: 8px 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 40px rgba(255,215,0,0.9);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            z-index: 10;
+            animation: badge-pop 0.5s ease-out;
+            white-space: nowrap;
+        }
+
+        @keyframes badge-pop {
+            0% { transform: translateX(-50%) scale(0); }
+            80% { transform: translateX(-50%) scale(1.15); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        .faults-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 18%;
+            min-height: 50px;
+            z-index: 5;
+        }
+
+        .fault-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(14px, 2.5vw, 26px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s, transform 0.1s;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #888;
+            background: #2a2a2a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: auto;
+            touch-action: manipulation;
+        }
+
+        .fault-btn.active {
+            background: #e63946;
+            color: white;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.3);
+            border-color: #ff8a8a;
+        }
+
+        .fault-btn.active.blue-fault {
+            background: #3a86ff;
+            border-color: #7aacff;
+        }
+
+        .fault-btn:active {
+            transform: scale(0.95);
+        }
+
+        .fault-btn.disabled {
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* ===== MODAL PARAMÈTRES ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(180deg, #16213e, #0f3460);
+            border: 3px solid #e94560;
+            border-radius: 20px;
+            padding: 25px 30px;
+            max-width: 500px;
+            width: 90%;
+            color: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f0c040;
+            font-size: clamp(18px, 3vw, 26px);
+            letter-spacing: 2px;
+        }
+
+        .modal-field {
+            margin-bottom: 18px;
+        }
+
+        .modal-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: clamp(13px, 2vw, 16px);
+            color: #8ab4f8;
+            font-weight: bold;
+        }
+
+        .modal-field input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid #3a86ff;
+            background: #0a1a2f;
+            color: white;
+            font-size: clamp(16px, 2.5vw, 20px);
+            font-weight: bold;
+            outline: none;
+        }
+
+        .modal-field input:focus {
+            border-color: #f0c040;
+            box-shadow: 0 0 15px rgba(240,192,64,0.5);
+        }
+
+        .modal-field .hint {
+            font-size: clamp(10px, 1.5vw, 12px);
+            color: #6a8ab0;
+            margin-top: 4px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: clamp(14px, 2vw, 18px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .modal-buttons button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-validate {
+            background: #2a9d8f;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #555;
+            color: white;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) and (orientation: landscape) {
+            .top-bar {
+                height: 15vh;
+                min-height: 55px;
+                padding: 0 8px;
+                gap: 5px;
+            }
+            .top-section {
+                gap: 6px;
+            }
+            .btn-reset {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+            .round-display {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+            .round-display .label {
+                font-size: 8px;
+            }
+            .timer-box {
+                font-size: 28px;
+                min-width: 90px;
+                padding: 2px 10px;
+            }
+            .state-label {
+                font-size: 8px;
+                min-width: 40px;
+            }
+            .points-display {
+                font-size: 18vw;
+            }
+            .fault-btn {
+                font-size: 3vw;
+            }
+            .faults-container {
+                height: 22%;
+            }
+        }
+
+        @media (max-width: 500px) and (orientation: portrait) {
+            .top-bar {
+                height: 18vh;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 5px;
+            }
+            .timer-box {
+                font-size: 36px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .points-display {
+                font-size: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRE DU HAUT -->
+    <div class="top-bar">
+        <div class="top-section">
+            <button class="btn-reset" id="resetBtn">🔄 Réinitialiser</button>
+            <div class="round-display" id="roundDisplay">
+                <span class="label">ROUND</span>
+                <span id="roundText">1/3</span>
+                <span style="font-size:10px;color:#6a8ab0;">⚙️</span>
+            </div>
+        </div>
+
+        <div class="top-section">
+            <div class="score-pills" id="scorePills">
+                <!-- Les pastilles seront générées dynamiquement -->
+            </div>
+        </div>
+
+        <div class="timer-container">
+            <div class="state-label" id="stateLabel">ROUND</div>
+            <div class="timer-box" id="timerBox">1:30</div>
+        </div>
+    </div>
+
+    <!-- PARTIE BASSE : ÉCRANS BLEU ET ROUGE -->
+    <div class="bottom-area">
+        <div class="screen blue" id="blueScreen">
+            <div class="points-display" id="bluePoints">0</div>
+            <div class="winner-badge" id="blueWinner" style="display:none;">VAINQUEUR</div>
+            <div class="faults-container" id="blueFaults">
+                <div class="fault-btn blue-fault" data-fault="0">Faute 1</div>
+                <div class="fault-btn blue-fault" data-fault="1">Faute 2</div>
+                <div class="fault-btn blue-fault" data-fault="2">Faute 3</div>
+            </div>
+        </div>
+        <div class="screen red" id="redScreen">
+            <div class="points-display" id="redPoints">0</div>
+            <div class="winner-badge" id="redWinner" style="display:none;">VAINQUEUR</div>
+            <div class="faults-container" id="redFaults">
+                <div class="fault-btn" data-fault="0">Faute 1</div>
+                <div class="fault-btn" data-fault="1">Faute 2</div>
+                <div class="fault-btn" data-fault="2">Faute 3</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARAMÈTRES -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>⚙️ Paramètres du combat</h2>
+            <div class="modal-field">
+                <label for="inputRounds">Nombre de rounds</label>
+                <input type="number" id="inputRounds" min="1" max="20" value="3">
+            </div>
+            <div class="modal-field">
+                <label for="inputRoundDuration">Durée d'un round (secondes)</label>
+                <input type="number" id="inputRoundDuration" min="10" max="600" value="90">
+                <div class="hint">Par défaut : 90 secondes (1 min 30)</div>
+            </div>
+            <div class="modal-field">
+                <label for="inputBreakDuration">Temps de repos entre les rounds (secondes)</label>
+                <input type="number" id="inputBreakDuration" min="5" max="300" value="30">
+                <div class="hint">Par défaut : 30 secondes</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="modalCancel">Annuler</button>
+                <button class="btn-validate" id="modalValidate">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== AUDIO CONTEXT =====
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Cloche forte
+        function playBell() {
+            initAudio();
+            if (!audioCtx) return;
+            
+            const now = audioCtx.currentTime;
+            
+            // Fondamental
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(880, now);
+            osc1.frequency.exponentialRampToValueAtTime(440, now + 1.5);
+            gain1.gain.setValueAtTime(0.8, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 2);
+            
+            // Harmonique
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1320, now);
+            osc2.frequency.exponentialRampToValueAtTime(660, now + 1.2);
+            gain2.gain.setValueAtTime(0.5, now);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+            
+            // Bruit métallique
+            const osc3 = audioCtx.createOscillator();
+            const gain3 = audioCtx.createGain();
+            osc3.type = 'square';
+            osc3.frequency.setValueAtTime(1760, now);
+            osc3.frequency.exponentialRampToValueAtTime(880, now + 0.8);
+            gain3.gain.setValueAtTime(0.3, now);
+            gain3.gain.exponentialRampToValueAtTime(0.001, now + 1);
+            
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc3.connect(gain3);
+            gain3.connect(audioCtx.destination);
+            
+            osc1.start(now);
+            osc2.start(now);
+            osc3.start(now);
+            osc1.stop(now + 2);
+            osc2.stop(now + 2);
+            osc3.stop(now + 1.5);
+        }
+
+        // ===== ÉTAT DU JEU =====
+        const state = {
+            // Config
+            totalRounds: 3,
+            roundDuration: 90,      // secondes
+            breakDuration: 30,      // secondes
+            
+            // Combat
+            currentRound: 1,
+            bluePoints: 0,
+            redPoints: 0,
+            blueFaults: [false, false, false],
+            redFaults: [false, false, false],
+            
+            // Round scores (qui a gagné chaque round)
+            roundWinners: [],        // 'blue' | 'red' | null
+            
+            // Chrono
+            timer: null,
+            timeLeft: 90,
+            isRunning: false,
+            phase: 'round',          // 'round' | 'break' | 'finished'
+            
+            // Combat
+            matchFinished: false,
+            winner: null,            // 'blue' | 'red' | null
+            roundJustEnded: false,
+        };
+
+        // ===== RÉFÉRENCES DOM =====
+        const blueScreen = document.getElementById('blueScreen');
+        const redScreen = document.getElementById('redScreen');
+        const bluePointsEl = document.getElementById('bluePoints');
+        const redPointsEl = document.getElementById('redPoints');
+        const blueWinnerEl = document.getElementById('blueWinner');
+        const redWinnerEl = document.getElementById('redWinner');
+        const blueFaultsEl = document.getElementById('blueFaults');
+        const redFaultsEl = document.getElementById('redFaults');
+        const timerBox = document.getElementById('timerBox');
+        const stateLabel = document.getElementById('stateLabel');
+        const roundText = document.getElementById('roundText');
+        const roundDisplay = document.getElementById('roundDisplay');
+        const scorePills = document.getElementById('scorePills');
+        const resetBtn = document.getElementById('resetBtn');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalValidate = document.getElementById('modalValidate');
+        const inputRounds = document.getElementById('inputRounds');
+        const inputRoundDuration = document.getElementById('inputRoundDuration');
+        const inputBreakDuration = document.getElementById('inputBreakDuration');
+
+        // ===== FONCTIONS UTILITAIRES =====
+        function formatTime(seconds) {
+            const s = Math.max(0, Math.floor(seconds));
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function getActiveFaults(side) {
+            return side === 'blue' ? state.blueFaults : state.redFaults;
+        }
+
+        function countActiveFaults(side) {
+            return getActiveFaults(side).filter(Boolean).length;
+        }
+
+        // ===== RENDU =====
+        function render() {
+            // Points
+            bluePointsEl.textContent = state.bluePoints;
+            redPointsEl.textContent = state.redPoints;
+            
+            // Round
+            roundText.textContent = `${state.currentRound}/${state.totalRounds}`;
+            
+            // Pastilles de score
+            renderPills();
+            
+            // Chrono
+            renderTimer();
+            
+            // État
+            renderState();
+            
+            // Fautes
+            renderFaults('blue');
+            renderFaults('red');
+            
+            // Vainqueur
+            renderWinner();
+            
+            // Désactiver les écrans si match fini
+            if (state.matchFinished) {
+                blueScreen.classList.add('disabled');
+                redScreen.classList.add('disabled');
+            } else {
+                blueScreen.classList.remove('disabled');
+                redScreen.classList.remove('disabled');
+            }
+        }
+
+        function renderPills() {
+            scorePills.innerHTML = '';
+            for (let i = 0; i < state.totalRounds; i++) {
+                const pill = document.createElement('div');
+                pill.className = 'pill';
+                
+                const winner = state.roundWinners[i];
+                if (winner === 'red') {
+                    pill.classList.add('red');
+                } else if (winner === 'blue') {
+                    pill.classList.add('blue');
+                } else {
+                    pill.classList.add('gray');
+                }
+                
+                // Round actuel en cours : pastille clignotante
+                if (i === state.currentRound - 1 && !state.matchFinished && state.phase !== 'finished') {
+                    pill.style.border = '2px solid #f0c040';
+                    pill.style.boxShadow = '0 0 12px rgba(240,192,64,0.8)';
+                }
+                
+                scorePills.appendChild(pill);
+            }
+        }
+
+        function renderTimer() {
+            // Retirer les classes d'état
+            timerBox.classList.remove('warning', 'danger', 'finished');
+            
+            if (state.matchFinished) {
+                timerBox.textContent = 'FIN';
+                timerBox.classList.add('finished');
+                return;
+            }
+            
+            if (!state.isRunning && state.timeLeft === (state.phase === 'round' ? state.roundDuration : state.breakDuration)) {
+                // Pas encore démarré
+                timerBox.textContent = formatTime(state.timeLeft);
+                return;
+            }
+            
+            timerBox.textContent = formatTime(state.timeLeft);
+            
+            const total = state.phase === 'round' ? state.roundDuration : state.breakDuration;
+            const ratio = state.timeLeft / total;
+            
+            // Alertes
+            if (state.phase === 'round') {
+                if (state.timeLeft <= 10) {
+                    timerBox.classList.add('danger');
+                } else if (ratio <= 1/3) {
+                    timerBox.classList.add('warning');
+                }
+            } else if (state.phase === 'break') {
+                if (state.timeLeft <= 5) {
+                    timerBox.classList.add('danger');
+                } else if (ratio <= 1/3) {
+                    timerBox.classList.add('warning');
+                }
+            }
+        }
+
+        function renderState() {
+            if (state.matchFinished) {
+                stateLabel.textContent = 'MATCH FINI';
+                return;
+            }
+            
+            switch (state.phase) {
+                case 'round':
+                    stateLabel.textContent = state.isRunning ? 'ROUND EN COURS' : 'PRÊT';
+                    break;
+                case 'break':
+                    stateLabel.textContent = state.isRunning ? 'REPOS' : 'REPOS (PAUSE)';
+                    break;
+                case 'finished':
+                    stateLabel.textContent = 'TERMINÉ';
+                    break;
+            }
+        }
+
+        function renderFaults(side) {
+            const container = side === 'blue' ? blueFaultsEl : redFaultsEl;
+            const faults = getActiveFaults(side);
+            const buttons = container.querySelectorAll('.fault-btn');
+            
+            buttons.forEach((btn, i) => {
+                if (faults[i]) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+                
+                // Désactiver si match fini
+                if (state.matchFinished) {
+                    btn.classList.add('disabled');
+                } else {
+                    btn.classList.remove('disabled');
+                }
+            });
+        }
+
+        function renderWinner() {
+            if (state.matchFinished && state.winner) {
+                if (state.winner === 'blue') {
+                    blueWinnerEl.style.display = 'block';
+                    redWinnerEl.style.display = 'none';
+                    blueScreen.classList.add('winner');
+                    redScreen.classList.remove('winner');
+                } else {
+                    redWinnerEl.style.display = 'block';
+                    blueWinnerEl.style.display = 'none';
+                    redScreen.classList.add('winner');
+                    blueScreen.classList.remove('winner');
+                }
+            } else {
+                blueWinnerEl.style.display = 'none';
+                redWinnerEl.style.display = 'none';
+                blueScreen.classList.remove('winner');
+                redScreen.classList.remove('winner');
+            }
+        }
+
+        // ===== ACTIONS =====
+        function addPoint(side) {
+            if (state.matchFinished) return;
+            if (state.phase === 'break') return; // Pas de points pendant le repos
+            
+            if (side === 'blue') {
+                state.bluePoints++;
+            } else {
+                state.redPoints++;
+            }
+            render();
+        }
+
+        function toggleFault(side, index) {
+            if (state.matchFinished) return;
+            if (state.phase === 'break') return;
+            
+            const faults = getActiveFaults(side);
+            faults[index] = !faults[index];
+            
+            // Vérifier si 3 fautes
+            if (countActiveFaults(side) >= 3) {
+                endMatch(side === 'blue' ? 'red' : 'blue', '3 fautes');
+                return;
+            }
+            
+            render();
+        }
+
+        function endMatch(winner, reason) {
+            state.matchFinished = true;
+            state.winner = winner;
+            state.isRunning = false;
+            state.phase = 'finished';
+            stopTimer();
+            playBell();
+            render();
+            console.log(`Match terminé - Vainqueur: ${winner} (${reason})`);
+        }
+
+        function endRound() {
+            if (state.matchFinished) return;
+            
+            state.isRunning = false;
+            stopTimer();
+            playBell();
+            
+            // Déterminer le vainqueur du round
+            let roundWinner = null;
+            if (state.bluePoints > state.redPoints) {
+                roundWinner = 'blue';
+            } else if (state.redPoints > state.bluePoints) {
+                roundWinner = 'red';
+            } else {
+                roundWinner = null; // Égalité
+            }
+            
+            // Enregistrer le vainqueur du round
+            state.roundWinners[state.currentRound - 1] = roundWinner;
+            
+            // Vérifier si le match est fini (tous les rounds joués)
+            if (state.currentRound >= state.totalRounds) {
+                // Match terminé - compter les victoires
+                const blueWins = state.roundWinners.filter(w => w === 'blue').length;
+                const redWins = state.roundWinners.filter(w => w === 'red').length;
+                
+                if (blueWins > redWins) {
+                    endMatch('blue', 'Victoire aux rounds');
+                } else if (redWins > blueWins) {
+                    endMatch('red', 'Victoire aux rounds');
+                } else {
+                    // Égalité parfaite - compter les points totaux
+                    if (state.bluePoints > state.redPoints) {
+                        endMatch('blue', 'Victoire aux points');
+                    } else if (state.redPoints > state.bluePoints) {
+                        endMatch('red', 'Victoire aux points');
+                    } else {
+                        // Match nul
+                        state.matchFinished = true;
+                        state.winner = null;
+                        state.phase = 'finished';
+                        render();
+                    }
+                }
+                return;
+            }
+            
+            // Passer au round suivant après le repos
+            state.phase = 'break';
+            state.timeLeft = state.breakDuration;
+            state.isRunning = true;
+            startTimer();
+            render();
+        }
+
+        function startNextRound() {
+            if (state.matchFinished) return;
+            
+            state.currentRound++;
+            state.phase = 'round';
+            state.timeLeft = state.roundDuration;
+            state.isRunning = true;
+            
+            // Réinitialiser les points pour le nouveau round
+            state.bluePoints = 0;
+            state.redPoints = 0;
+            
+            // Réinitialiser les fautes
+            state.blueFaults = [false, false, false];
+            state.redFaults = [false, false, false];
+            
+            playBell();
+            startTimer();
+            render();
+        }
+
+        // ===== TIMER =====
+        function startTimer() {
+            stopTimer();
+            state.timer = setInterval(() => {
+                if (!state.isRunning) return;
+                
+                state.timeLeft--;
+                
+                // Vérifier les seuils d'alerte
+                const total = state.phase === 'round' ? state.roundDuration : state.breakDuration;
+                const ratio = state.timeLeft / total;
+                
+                if (state.phase === 'round') {
+                    if (state.timeLeft === Math.floor(total / 3)) {
+                        playBell(); // Alerte 1/3
+                    }
+                    if (state.timeLeft === 10) {
+                        playBell(); // Alerte 10 secondes
+                    }
+                    if (state.timeLeft <= 0) {
+                        state.timeLeft = 0;
+                        render();
+                        endRound();
+                        return;
+                    }
+                } else if (state.phase === 'break') {
+                    if (state.timeLeft <= 0) {
+                        state.timeLeft = 0;
+                        render();
+                        startNextRound();
+                        return;
+                    }
+                }
+                
+                render();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (state.timer) {
+                clearInterval(state.timer);
+                state.timer = null;
+            }
+        }
+
+        // ===== RÉINITIALISATION =====
+        function resetAll() {
+            stopTimer();
+            
+            // Réinitialiser l'état
+            state.currentRound = 1;
+            state.bluePoints = 0;
+            state.redPoints = 0;
+            state.blueFaults = [false, false, false];
+            state.redFaults = [false, false, false];
+            state.roundWinners = [];
+            state.timeLeft = state.roundDuration;
+            state.isRunning = false;
+            state.phase = 'round';
+            state.matchFinished = false;
+            state.winner = null;
+            
+            // Nettoyer l'interface
+            blueWinnerEl.style.display = 'none';
+            redWinnerEl.style.display = 'none';
+            blueScreen.classList.remove('winner', 'disabled');
+            redScreen.classList.remove('winner', 'disabled');
+            
+            render();
+        }
+
+        // ===== ÉVÉNEMENTS =====
+        // Points
+        blueScreen.addEventListener('click', (e) => {
+            // Ne pas déclencher si on clique sur un bouton de faute
+            if (e.target.closest('.fault-btn')) return;
+            addPoint('blue');
+        });
+
+        redScreen.addEventListener('click', (e) => {
+            if (e.target.closest('.fault-btn')) return;
+            addPoint('red');
+        });
+
+        // Fautes
+        blueFaultsEl.querySelectorAll('.fault-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.fault);
+                toggleFault('blue', index);
+            });
+        });
+
+        redFaultsEl.querySelectorAll('.fault-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.fault);
+                toggleFault('red', index);
+            });
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Réinitialiser tout le combat ?')) {
+                resetAll();
+            }
+        });
+
+        // Modal paramètres
+        roundDisplay.addEventListener('click', () => {
+            inputRounds.value = state.totalRounds;
+            inputRoundDuration.value = state.roundDuration;
+            inputBreakDuration.value = state.breakDuration;
+            modalOverlay.classList.add('open');
+        });
+
+        modalCancel.addEventListener('click', () => {
+            modalOverlay.classList.remove('open');
+        });
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('open');
+            }
+        });
+
+        modalValidate.addEventListener('click', () => {
+            const rounds = parseInt(inputRounds.value) || 3;
+            const roundDur = parseInt(inputRoundDuration.value) || 90;
+            const breakDur = parseInt(inputBreakDuration.value) || 30;
+            
+            state.totalRounds = Math.max(1, Math.min(20, rounds));
+            state.roundDuration = Math.max(10, Math.min(600, roundDur));
+            state.breakDuration = Math.max(5, Math.min(300, breakDur));
+            
+            modalOverlay.classList.remove('open');
+            
+            // Réinitialiser avec les nouveaux paramètres
+            resetAll();
+            state.timeLeft = state.roundDuration;
+            render();
+        });
+
+        // Démarrer le chrono au premier clic sur un écran
+        blueScreen.addEventListener('click', () => {
+            if (!state.isRunning && !state.matchFinished && state.phase === 'round' && state.timeLeft === state.roundDuration) {
+                state.isRunning = true;
+                playBell();
+                startTimer();
+            }
+        }, { once: false });
+
+        redScreen.addEventListener('click', () => {
+            if (!state.isRunning && !state.matchFinished && state.phase === 'round' && state.timeLeft === state.roundDuration) {
+                state.isRunning = true;
+                playBell();
+                startTimer();
+            }
+        }, { once: false });
+
+        // ===== INITIALISATION =====
+        function init() {
+            // Remplir les roundWinners avec des null
+            for (let i = 0; i < state.totalRounds; i++) {
+                state.roundWinners.push(null);
+            }
+            
+            state.timeLeft = state.roundDuration;
+            render();
+        }
+
+        init();
+    </script>
+</body>
+</html>
